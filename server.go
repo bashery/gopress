@@ -34,6 +34,18 @@ func getTime(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "time is :%d \n", tn)
 }
 
+// get time
+func selectTime(db *sql.DB, serial string) string {
+	time := ""
+	row := db.QueryRow("select ts from boots where serial=?", serial)
+	defer db.Close()
+
+	if err := row.Scan(&time); err != nil {
+		return err.Error()
+	}
+	return time
+}
+
 //fs := http.FileServer(http.Dir("static/"))
 //http.Handle("/static/", http.StripPrefix("/static/", fs))
 
@@ -42,7 +54,7 @@ type Boot struct {
 	Address string
 }
 
-func databases() {
+func initDatabase() *sql.DB {
 	db, e := sql.Open("mysql", "root:123456@/lisence")
 	ErrorCheck(e)
 
@@ -50,8 +62,12 @@ func databases() {
 	defer db.Close()
 
 	PingDB(db)
+	return db
+}
 
-	// INSERT INTO DB
+// INSERT INTO DB
+func insert(db *sql.DB) {
+
 	// prepare
 	stmt, e := db.Prepare("insert into boots(address, serial) values (?, ?)")
 	ErrorCheck(e)
@@ -60,34 +76,27 @@ func databases() {
 	_, e = stmt.Exec("123.123.123") //,serial())
 	ErrorCheck(e)
 
-	//Update db
-	stmt, e = db.Prepare("update boots set addres=? where bootid=?")
+}
+
+//Update db
+func Update(db *sql.DB) {
+
+	stmt, e := db.Prepare("update boots set addres=? where bootid=?")
 	ErrorCheck(e)
 
 	// execute
 	_, e = stmt.Exec("", "5")
 	ErrorCheck(e)
+}
 
-	// query all data
-	rows, e := db.Query("select * from boots")
-	ErrorCheck(e)
-
-	var boot = Boot{}
-
-	for rows.Next() {
-		e = rows.Scan(&boot.Address, &boot.Serial)
-		ErrorCheck(e)
-		fmt.Println(boot)
-	}
-
-	// delete data
-	stmt, e = db.Prepare("delete from boots where serial=?")
+// delete data
+func delete(db *sql.DB) {
+	stmt, e := db.Prepare("delete from boots where serial=?")
 	ErrorCheck(e)
 
 	// delete 5th boot
 	_, e = stmt.Exec("5")
 	ErrorCheck(e)
-
 }
 
 func ErrorCheck(err error) {
