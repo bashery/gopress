@@ -6,15 +6,17 @@ import (
 	"net/http"
 )
 
-func main() {
-	fmt.Println(userAuth())
-	fmt.Println(expiration())
-	fmt.Println(serial())
+var (
+	url = "http://localhost:8080"
+)
 
+func main() {
+	fmt.Println(userAuth("serial"))
+	fmt.Println(expiration("serial"))
 }
 
-func userAuth() string {
-	resp, err := http.Get("http://localhost:8080/auth?serial=" + "serial")
+func userAuth(serial string) string {
+	resp, err := http.Get(url + "/auth?serial=" + serial)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -24,8 +26,8 @@ func userAuth() string {
 
 }
 
-func expiration() string {
-	resp, err := http.Get("http://localhost:8080/expiration?time=" + "serial")
+func expiration(serial string) string {
+	resp, err := http.Get(url + "/time?serial=" + serial)
 	if err != nil {
 		fmt.Println(err)
 	}
