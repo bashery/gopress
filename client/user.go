@@ -11,28 +11,27 @@ var (
 )
 
 func main() {
-	fmt.Println(userAuth("serial"))
-	fmt.Println(expiration("serial"))
+	userAuth("serial")
+	expiration("serial")
 }
 
-func userAuth(serial string) string {
+func userAuth(serial string) {
 	resp, err := http.Get(url + "/auth?serial=" + serial)
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer resp.Body.Close()
 	user, _ := ioutil.ReadAll(resp.Body)
-	return string(user)
-
+	println(string(user))
 }
 
-func expiration(serial string) string {
+func expiration(serial string) {
 	resp, err := http.Get(url + "/time?serial=" + serial)
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer resp.Body.Close()
 	btime, _ := ioutil.ReadAll(resp.Body)
-	return string(btime)
+	println(string(btime))
 
 }
