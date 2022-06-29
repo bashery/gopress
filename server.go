@@ -26,24 +26,45 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
+// TODO check this auth func
+// check by serial
+func auth(w http.ResponseWriter, r *http.Request) {
+	// check boot serial if not run on aother ip addres
+	url := r.URL.Query()
+	serial := url.Get("serial")
+	fmt.Println(serial)
+
+	//ip := url.Get("ip")
+	//fmt.Println(ip)
+
+	time := ""
+	row := db.QueryRow("select ts from licenses.boots where serial=?", serial)
+
+	if err := row.Scan(&time); err != nil {
+		ErrorCheck(err)
+	}
+
+	fmt.Print(time)
+	// if bootid { save ipaddress}
+
+	//addr := r.RemoteAddr
+
+	fmt.Fprintf(w, time)
+}
+
 // deleteBoot
 func deleteBoot(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query()
 	serial := url.Get("serial")
 
 	// delete boot from db by serial
-	delete(db, serial)
-
-	fmt.Fprintf(w, "serial : %s\n", serial)
-}
-
-// delete boot from db by serial
-func delete(db *sql.DB, serial string) {
 	stmt, e := db.Prepare("delete from licenses.boots where serial=?")
 	ErrorCheck(e)
 
 	_, e = stmt.Exec(serial)
 	ErrorCheck(e)
+
+	fmt.Fprintf(w, "serial : %s\n", serial)
 }
 
 // changeIpAddr update ip addr
@@ -72,8 +93,12 @@ func newBoot(w http.ResponseWriter, r *http.Request) {
 	ErrorCheck(e)
 
 	//execute
-	_, e = stmt.Exec(serial, ipaddress) //,serial())
+	_, err := stmt.Exec(serial, ipaddress) //,serial())
 	ErrorCheck(e)
+	if err != nil {
+		fmt.Fprintf(w, "wrong")
+		return
+	}
 
 	fmt.Fprintf(w, "serial : %s\nipaddress %s", serial, ipaddress)
 }
@@ -83,29 +108,13 @@ func expiration(w http.ResponseWriter, r *http.Request) {
 	serial := url.Get("serial")
 
 	time := ""
-	row := db.QueryRow("select ts from licenses.boots where serial=?", serial)
+	row := db.QueryRow("select unix_timestamp(ts) from licenses.boots where serial=?", serial)
 
 	if err := row.Scan(&time); err != nil {
 		ErrorCheck(err)
 	}
 
 	fmt.Fprintf(w, "%s", time)
-}
-
-// TODO check this auth func
-// check by serial
-func auth(w http.ResponseWriter, r *http.Request) {
-	// check boot serial if not run on aother ip addres
-	url := r.URL.Query()
-	serial := url.Get("serial")
-	fmt.Println(serial)
-
-	ip := url.Get("ip")
-	fmt.Println(ip)
-
-	addr := r.RemoteAddr
-
-	fmt.Fprintf(w, addr)
 }
 
 // initialaze database
