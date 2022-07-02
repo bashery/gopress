@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -16,20 +17,35 @@ import (
 
 func main() {
 
-	var ip, ser string
-
+	var cmd, ip, ser, name string
+	flag.StringVar(&cmd, "cmd", "", "The 'cmd' must be 'new', 'set', 'get' \"\"")
+	flag.StringVar(&name, "name", "", "The 'name' for name boot \"\"")
 	flag.StringVar(&ser, "ser", "", "The 'ser' must be serial! Default is \"\"")
-	flag.StringVar(&ip, "ip", "", "The 'ip' must be ip addres Default is \"\"")
+	flag.StringVar(&ip, "ip", "ip", "The 'ip' must be ip addres Default is \"\"")
 
 	// parse flags from command line
 	flag.Parse()
 
+	switch cmd {
+	case "create":
+		createBoot(name, ip) // test this
+	case "update":
+		println("update boot")
+	case "get":
+		println("get boot info")
+	case "delete":
+		println("delete boot")
+	}
+
 	// output
 	fmt.Println("flugs is ", ser, ip)
 
+	os.Exit(0)
+}
+
+func createBoot(name, ip string) {
 	//
-	nserial := newSerial()
-	resp, err := http.Get("http://localhost:8080/new?serial=" + nserial + "&ip=" + ip)
+	resp, err := http.Get("http://localhost:8080/new?serial=" + newSerial() + "&name=" + name + "&ip=" + ip)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -40,12 +56,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println("send: ", nserial)
 	fmt.Println("rese: ", string(body))
-
 }
-
 func newSerial() (serial string) {
 	chars := []string{
 		"q", "w", "e", "r", "t", "y", "u", "i", "o",

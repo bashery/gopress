@@ -86,21 +86,22 @@ func changeIpAddr(w http.ResponseWriter, r *http.Request) {
 func newBoot(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query()
 	serial := url.Get("serial")
+	name := url.Get("name")
 	ipaddress := url.Get("ip")
 
 	// prepare
-	stmt, e := db.Prepare("insert into licenses.boots(serial, ipaddress ) values (?, ?)")
+	stmt, e := db.Prepare("insert into licenses.boots(name, serial, ipaddress ) values (?, ?,?)")
 	ErrorCheck(e)
 
 	//execute
-	_, err := stmt.Exec(serial, ipaddress) //,serial())
+	_, err := stmt.Exec(name, serial, ipaddress) //,serial())
 	ErrorCheck(e)
 	if err != nil {
 		fmt.Fprintf(w, "wrong")
 		return
 	}
 
-	fmt.Fprintf(w, "serial : %s\nipaddress %s", serial, ipaddress)
+	fmt.Fprintf(w, "new boot created\nname: %s\nserial : %s\nipaddress %s", name, serial, ipaddress)
 }
 
 func expiration(w http.ResponseWriter, r *http.Request) {
