@@ -20,7 +20,7 @@ func main() {
 	http.HandleFunc("/auth", auth)
 	http.HandleFunc("/time", expiration)
 	http.HandleFunc("/new", newBoot)
-	http.HandleFunc("/update", changeIpAddr)
+	http.HandleFunc("/update", update)
 	http.HandleFunc("/delete", deleteBoot)
 
 	http.ListenAndServe(":8080", nil)
@@ -68,19 +68,46 @@ func deleteBoot(w http.ResponseWriter, r *http.Request) {
 }
 
 // changeIpAddr update ip addr
-func changeIpAddr(w http.ResponseWriter, r *http.Request) {
+func update(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query()
 	serial := url.Get("serial")
 	ipaddress := url.Get("ip")
+	name := url.Get("name")
 
-	stmt, e := db.Prepare("update licenses.boots set ipaddress=? where serial=?")
+	fmt.Printf("name: %s\nip: %s\nserial: %s\n", name, ipaddress, serial)
+
+	var column, value string
+	if len(name) > 1 && len(ipaddress) > 5 {
+
+		stmt, e := db.Prepare("update licenses.boots set name=?, ipaddress=? where serial=?")
+		ErrorCheck(e)
+		_, e = stmt.Exec(name, ipaddress, serial)
+		ErrorCheck(e)
+
+		fmt.Fprintf(w, "update serial : %s\nipaddress %s", serial, ipaddress)
+
+		return
+	}
+
+	if len(name) > 1 && len(ipaddress) < 3 {
+		column = "name"
+		value = name
+	} else if len(name) < 1 && len(ipaddress) > 3 {
+		column = "ipaddress"
+		value = ipaddress
+	} else {
+		fmt.Fprintf(w, "nothing to update\n you messing name ipaddress")
+		return
+	}
+
+	stmt, e := db.Prepare("update licenses.boots set " + column + "=? where serial=?")
 	ErrorCheck(e)
 
 	// execute
-	_, e = stmt.Exec(ipaddress, serial)
+	_, e = stmt.Exec(value, serial)
 	ErrorCheck(e)
 
-	fmt.Fprintf(w, "serial : %s\nipaddress %s", serial, ipaddress)
+	fmt.Fprintf(w, "update %s : %s for serial : %s\n", column, value, serial)
 }
 
 func newBoot(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +128,7 @@ func newBoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "new boot created\nname: %s\nserial : %s\nipaddress %s", name, serial, ipaddress)
+	fmt.Fprintf(w, "بوت جديد\nname: %s\nserial : %s\nipaddress %s", name, serial, ipaddress)
 }
 
 func expiration(w http.ResponseWriter, r *http.Request) {
