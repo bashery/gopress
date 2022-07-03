@@ -17,11 +17,11 @@ import (
 
 func main() {
 
-	var cmd, ip, ser, name string
-	flag.StringVar(&cmd, "cmd", "", "The 'cmd' must be 'new', 'set', 'get' \"\"")
-	flag.StringVar(&name, "name", "", "The 'name' for name boot \"\"")
-	flag.StringVar(&ser, "ser", "", "The 'ser' must be serial! Default is \"\"")
-	flag.StringVar(&ip, "ip", "ip", "The 'ip' must be ip addres Default is \"\"")
+	var cmd, ip, serial, name string
+	flag.StringVar(&cmd, "cmd", "", "The 'cmd' must be 'new', 'update', 'get' to create update or get bot")
+	flag.StringVar(&name, "name", "", "The 'name' for name boot ")
+	flag.StringVar(&serial, "ser", "", "The 'ser' must be serial")
+	flag.StringVar(&ip, "ip", "ip", "The 'ip' must be ip addres")
 
 	// parse flags from command line
 	flag.Parse()
@@ -30,17 +30,51 @@ func main() {
 	case "create":
 		createBoot(name, ip) // test this
 	case "update":
-		println("update boot")
+		update(name, ip, serial)
 	case "get":
+		info(serial)
 		println("get boot info")
 	case "delete":
 		println("delete boot")
+	default:
+		fmt.Println("type -help for help message")
 	}
 
-	// output
-	fmt.Println("flugs is ", ser, ip)
-
 	os.Exit(0)
+}
+
+// update update boot name or ip or both
+func info(serial string) {
+	//
+	resp, err := http.Get("http://localhost:8080/info?serial=" + serial)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("rese: ", string(body))
+}
+
+// update update boot name or ip or both
+func update(name, ip, serial string) {
+	//
+	resp, err := http.Get("http://localhost:8080/update?serial=" + serial + "&name=" + name + "&ip=" + ip)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("rese: ", string(body))
 }
 
 func createBoot(name, ip string) {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -17,39 +18,50 @@ func main() {
 
 	loopping(db)
 
-	http.HandleFunc("/auth", auth)
+	http.HandleFunc("/info", info)
 	http.HandleFunc("/time", expiration)
 	http.HandleFunc("/new", newBoot)
 	http.HandleFunc("/update", update)
 	http.HandleFunc("/delete", deleteBoot)
 
+	//http.HandleFunc("/auth", auth)
 	http.ListenAndServe(":8080", nil)
+}
+
+//
+func expiration(w http.ResponseWriter, r *http.Request) {
+	url := r.URL.Query()
+	serial := url.Get("serial")
+
+	ts := ""
+	row := db.QueryRow("select unix_timestamp(ts) from licenses.boots where serial=?", serial)
+
+	if err := row.Scan(&ts); err != nil {
+		ErrorCheck(err)
+	}
+
+	times, err := strconv.Atoi(ts)
+	ErrorCheck(err)
+	nw := int(time.Now().Unix())
+	left := 31 - (nw-times)/60/60/24
+
+	fmt.Fprintf(w, "%d", left)
 }
 
 // TODO check this auth func
 // check by serial
-func auth(w http.ResponseWriter, r *http.Request) {
-	// check boot serial if not run on aother ip addres
+func info(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query()
 	serial := url.Get("serial")
-	fmt.Println(serial)
 
-	//ip := url.Get("ip")
-	//fmt.Println(ip)
+	row := db.QueryRow("select name, ipaddress, ts from licenses.boots where serial=?", serial)
 
-	time := ""
-	row := db.QueryRow("select ts from licenses.boots where serial=?", serial)
-
-	if err := row.Scan(&time); err != nil {
+	var name, ipaddress, time string
+	if err := row.Scan(&name, &ipaddress, &time); err != nil {
 		ErrorCheck(err)
 	}
 
-	fmt.Print(time)
-	// if bootid { save ipaddress}
-
-	//addr := r.RemoteAddr
-
-	fmt.Fprintf(w, time)
+	fmt.Fprintf(w, "%s, %s, %s", name, ipaddress, time)
 }
 
 // deleteBoot
@@ -65,49 +77,6 @@ func deleteBoot(w http.ResponseWriter, r *http.Request) {
 	ErrorCheck(e)
 
 	fmt.Fprintf(w, "serial : %s\n", serial)
-}
-
-// changeIpAddr update ip addr
-func update(w http.ResponseWriter, r *http.Request) {
-	url := r.URL.Query()
-	serial := url.Get("serial")
-	ipaddress := url.Get("ip")
-	name := url.Get("name")
-
-	fmt.Printf("name: %s\nip: %s\nserial: %s\n", name, ipaddress, serial)
-
-	var column, value string
-	if len(name) > 1 && len(ipaddress) > 5 {
-
-		stmt, e := db.Prepare("update licenses.boots set name=?, ipaddress=? where serial=?")
-		ErrorCheck(e)
-		_, e = stmt.Exec(name, ipaddress, serial)
-		ErrorCheck(e)
-
-		fmt.Fprintf(w, "update serial : %s\nipaddress %s", serial, ipaddress)
-
-		return
-	}
-
-	if len(name) > 1 && len(ipaddress) < 3 {
-		column = "name"
-		value = name
-	} else if len(name) < 1 && len(ipaddress) > 3 {
-		column = "ipaddress"
-		value = ipaddress
-	} else {
-		fmt.Fprintf(w, "nothing to update\n you messing name ipaddress")
-		return
-	}
-
-	stmt, e := db.Prepare("update licenses.boots set " + column + "=? where serial=?")
-	ErrorCheck(e)
-
-	// execute
-	_, e = stmt.Exec(value, serial)
-	ErrorCheck(e)
-
-	fmt.Fprintf(w, "update %s : %s for serial : %s\n", column, value, serial)
 }
 
 func newBoot(w http.ResponseWriter, r *http.Request) {
@@ -131,18 +100,42 @@ func newBoot(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "بوت جديد\nname: %s\nserial : %s\nipaddress %s", name, serial, ipaddress)
 }
 
-func expiration(w http.ResponseWriter, r *http.Request) {
+// changeIpAddr update ip addr
+func update(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query()
 	serial := url.Get("serial")
+	ipaddress := url.Get("ip")
+	name := url.Get("name")
 
-	time := ""
-	row := db.QueryRow("select unix_timestamp(ts) from licenses.boots where serial=?", serial)
+	fmt.Printf("name: %s\nip: %s\nserial: %s\n", name, ipaddress, serial)
 
-	if err := row.Scan(&time); err != nil {
-		ErrorCheck(err)
+	// update name or ip or both
+	var column, value string
+	if len(name) > 1 && len(ipaddress) > 5 {
+		stmt, e := db.Prepare("update licenses.boots set name=?, ipaddress=? where serial=?")
+		ErrorCheck(e)
+		_, e = stmt.Exec(name, ipaddress, serial)
+		ErrorCheck(e)
+		fmt.Fprintf(w, "update serial : %s\nipaddress %s", serial, ipaddress)
+		return
 	}
 
-	fmt.Fprintf(w, "%s", time)
+	if len(name) > 1 && len(ipaddress) < 3 {
+		column = "name"
+		value = name
+	} else if len(name) < 1 && len(ipaddress) > 3 {
+		column = "ipaddress"
+		value = ipaddress
+	} else {
+		fmt.Fprintf(w, "nothing to update\n you messing name ipaddress")
+		return
+	}
+
+	stmt, e := db.Prepare("update licenses.boots set " + column + "=? where serial=?")
+	ErrorCheck(e)
+	_, e = stmt.Exec(value, serial)
+	ErrorCheck(e)
+	fmt.Fprintf(w, "update %s : %s for serial : %s\n", column, value, serial)
 }
 
 // initialaze database
@@ -169,6 +162,27 @@ func loopping(db *sql.DB) {
 		}
 	}()
 }
+
+/*
+func auth(w http.ResponseWriter, r *http.Request) {
+	// check boot serial if not run on aother ip addres
+	url := r.URL.Query()
+	serial := url.Get("serial")
+	fmt.Println(serial)
+
+	time := ""
+	row := db.QueryRow("select ts from licenses.boots where serial=?", serial)
+
+	if err := row.Scan(&time); err != nil {
+		ErrorCheck(err)
+	}
+
+	fmt.Print(time)
+
+	fmt.Fprintf(w, time)
+}
+
+*/
 
 //fs := http.FileServer(http.Dir("static/"))
 //http.Handle("/static/", http.StripPrefix("/static/", fs))
