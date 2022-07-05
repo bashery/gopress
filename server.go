@@ -25,10 +25,10 @@ func main() {
 	http.HandleFunc("/delete", deleteBoot)
 
 	//http.HandleFunc("/auth", auth)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8001", nil)
 }
 
-//
+// time expiration license
 func expiration(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query()
 	serial := url.Get("serial")
@@ -37,6 +37,7 @@ func expiration(w http.ResponseWriter, r *http.Request) {
 	row := db.QueryRow("select unix_timestamp(ts) from licenses.boots where serial=?", serial)
 
 	if err := row.Scan(&ts); err != nil {
+		fmt.Println("ts is : ", ts)
 		ErrorCheck(err)
 	}
 
@@ -140,7 +141,7 @@ func update(w http.ResponseWriter, r *http.Request) {
 
 // initialaze database
 func initDatabase() *sql.DB {
-	db, err := sql.Open("mysql", "root:123456@/licenses")
+	db, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/?charset=utf8&parseTime=True&loc=Local")
 	ErrorCheck(err)
 
 	return db

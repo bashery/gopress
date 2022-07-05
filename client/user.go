@@ -29,9 +29,7 @@ func userAuth(serial string) {
 		fmt.Println("no auth ")
 		os.Exit(0)
 	}
-
 	println(string(user))
-
 }
 
 func expiration(serial string) {
