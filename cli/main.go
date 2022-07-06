@@ -2,7 +2,6 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -15,7 +14,27 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+var url = "http://158.247.195.235:8001"
+
+func doc() {
+	//
+	resp, err := http.Get("https://modules.vlang.io/math.html")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("rese: ", string(body))
+}
+
 func main() {
+	doc()
+	os.Exit(0)
 
 	var cmd, ip, serial, name string
 	flag.StringVar(&cmd, "cmd", "", "The 'cmd' must be 'new', 'update', 'get' to create update or get bot")
@@ -27,7 +46,7 @@ func main() {
 	flag.Parse()
 
 	switch cmd {
-	case "create":
+	case "new":
 		createBoot(name, ip) // test this
 	case "update":
 		update(name, ip, serial)
@@ -46,7 +65,7 @@ func main() {
 // update update boot name or ip or both
 func info(serial string) {
 	//
-	resp, err := http.Get("http://localhost:8080/info?serial=" + serial)
+	resp, err := http.Get(url + "/info?serial=" + serial)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -63,7 +82,7 @@ func info(serial string) {
 // update update boot name or ip or both
 func update(name, ip, serial string) {
 	//
-	resp, err := http.Get("http://localhost:8080/update?serial=" + serial + "&name=" + name + "&ip=" + ip)
+	resp, err := http.Get(url + "/update?serial=" + serial + "&name=" + name + "&ip=" + ip)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -79,7 +98,7 @@ func update(name, ip, serial string) {
 
 func createBoot(name, ip string) {
 	//
-	resp, err := http.Get("http://localhost:8080/new?serial=" + newSerial() + "&name=" + name + "&ip=" + ip)
+	resp, err := http.Get(url + "/new?serial=" + newSerial() + "&name=" + name + "&ip=" + ip)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -105,6 +124,7 @@ func newSerial() (serial string) {
 	return serial
 }
 
+/*
 func PingDB(db *sql.DB) {
 	err := db.Ping()
 	panic(err)
@@ -118,3 +138,5 @@ func initDatabase() *sql.DB {
 	}
 	return db
 }
+
+*/
