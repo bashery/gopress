@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -23,9 +24,17 @@ func main() {
 	http.HandleFunc("/new", newBoot)
 	http.HandleFunc("/update", update)
 	http.HandleFunc("/delete", deleteBoot)
+	http.HandleFunc("/black", blackMed)
 
 	//http.HandleFunc("/auth", auth)
 	http.ListenAndServe(":8001", nil)
+}
+
+func blackMed(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	log.Println("one=" + r.FormValue("one"))
+	log.Println("two=" + r.FormValue("two"))
+	fmt.Fprintf(w, "Gorilla!\n")
 }
 
 // time expiration license
