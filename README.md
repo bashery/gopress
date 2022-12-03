@@ -1,1 +1,1 @@
-# boot-license
+# gopress
